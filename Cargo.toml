@@ -1,0 +1,11 @@
+[package]
+name = "nmon-rs"
+version = "1.0.0"
+edition = "2024"
+
+[dependencies]
+serde = { version = "1.0.228", features = ["derive"] }
+chrono = { version = "0.4.45", features = ["serde"] }
+sysinfo = "0.39.3"
+crossterm = "0.29.0"
+ratatui = "0.30.0"
