@@ -134,11 +134,18 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, state: &UiState, history
 
     // Build constraints layout
     let mut constraints = Vec::new();
-    for &(_, height) in &active_sections {
-        constraints.push(Constraint::Length(height));
+    let has_processes = active_sections.iter().any(|(sec, _)| matches!(sec, SectionType::Processes));
+    for &(sec, height) in &active_sections {
+        if let SectionType::Processes = sec {
+            constraints.push(Constraint::Min(5));
+        } else {
+            constraints.push(Constraint::Length(height));
+        }
     }
-    // Add extra constraint to consume overflow cleanly
-    constraints.push(Constraint::Min(0));
+    // Add extra constraint to consume overflow cleanly only if Processes is not taking up the remaining space
+    if !has_processes {
+        constraints.push(Constraint::Min(0));
+    }
 
     let layout_rects = Layout::default()
         .direction(Direction::Vertical)

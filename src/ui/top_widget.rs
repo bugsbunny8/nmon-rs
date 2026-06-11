@@ -36,9 +36,9 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect, sort_by_cpu:
         procs.sort_by(|a, b| b.memory_bytes.cmp(&a.memory_bytes));
     }
 
-    // Limit processes display to fill the available height (excluding borders and header line)
+    // Limit processes display to fill the available height dynamically (excluding borders and header line)
     let max_rows = (area.height.saturating_sub(3)) as usize;
-    let display_count = procs.len().min(max_rows).min(15); // limit to max 15 processes
+    let display_count = procs.len().min(max_rows);
 
     for proc in procs.iter().take(display_count) {
         let mem_mb = crate::metrics::bytes_to_mb(proc.memory_bytes as f64);
