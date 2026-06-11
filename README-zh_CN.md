@@ -1,5 +1,11 @@
 # nmon-rs
 
+[![rust](https://img.shields.io/badge/rust-%23e24d2c.svg?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![ratatui](https://img.shields.io/badge/ratatui-%23e63946.svg?style=flat-square&logo=ratatui&logoColor=white)](https://crates.io/crates/ratatui)
+[![crossterm](https://img.shields.io/badge/crossterm-%232a9d8f.svg?style=flat-square&logo=terminal&logoColor=white)](https://crates.io/crates/crossterm)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/bugsbunny8/nmon-rs?style=flat-square&logo=github)](https://github.com/bugsbunny8/nmon-rs/releases/latest)
+[![github actions](https://img.shields.io/github/actions/workflow/status/bugsbunny8/nmon-rs/release.yml?style=flat-square&logo=github)](https://github.com/bugsbunny8/nmon-rs/actions)
+
 `nmon-rs` 是一个基于 **Rust** 编写的终端系统性能监视器，重新实现了经典的 **nmon** (Nigel's Monitor) 工具。它支持交互式的终端用户界面 (TUI) 模式以及与标准 nmon 分析工具兼容的非交互式 CSV 日志记录模式。
 
 ---

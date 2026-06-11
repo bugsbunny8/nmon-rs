@@ -1,5 +1,10 @@
 # nmon-rs
 
+[![rust](https://img.shields.io/badge/rust-%23e24d2c.svg?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![ratatui](https://img.shields.io/badge/ratatui-%23e63946.svg?style=flat-square&logo=ratatui&logoColor=white)](https://crates.io/crates/ratatui)
+[![crossterm](https://img.shields.io/badge/crossterm-%232a9d8f.svg?style=flat-square&logo=terminal&logoColor=white)](https://crates.io/crates/crossterm)[![GitHub release (latest by date)](https://img.shields.io/github/v/release/bugsbunny8/nmon-rs?style=flat-square&logo=github)](https://github.com/bugsbunny8/nmon-rs/releases/latest)
+[![github actions](https://img.shields.io/github/actions/workflow/status/bugsbunny8/nmon-rs/release.yml?style=flat-square&logo=github)](https://github.com/bugsbunny8/nmon-rs/actions)
+
 A terminal-based system performance monitor written in **Rust**, reimplement the classic **nmon** (Nigel's Monitor) utility. It supports both an interactive terminal user interface (TUI) and a non-interactive CSV logging mode compatible with standard nmon analysis tools.
 
 ---
