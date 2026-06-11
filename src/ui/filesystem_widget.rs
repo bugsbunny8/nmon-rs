@@ -28,8 +28,8 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect) {
 
     for fs in &snapshot.filesystems {
         // Convert to GB
-        let total_gb = fs.total_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
-        let free_gb = fs.available_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
+        let total_gb = crate::metrics::bytes_to_gb(fs.total_bytes as f64);
+        let free_gb = crate::metrics::bytes_to_gb(fs.available_bytes as f64);
         let used_gb = total_gb - free_gb;
         
         let used_pct = if fs.total_bytes > 0 {
@@ -39,10 +39,22 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect) {
         };
 
         // Render filesystem details
-        // Truncate strings to prevent overflowing columns
-        let fs_name = if fs.name.len() > 14 { &fs.name[0..14] } else { &fs.name };
-        let fs_type = if fs.fs_type.len() > 11 { &fs.fs_type[0..11] } else { &fs.fs_type };
-        let fs_mount = if fs.mount_point.len() > 14 { &fs.mount_point[0..14] } else { &fs.mount_point };
+        // Truncate strings safely to prevent overflowing columns or panicking on Unicode boundaries
+        let fs_name: String = if fs.name.chars().count() > 14 {
+            fs.name.chars().take(14).collect()
+        } else {
+            fs.name.clone()
+        };
+        let fs_type: String = if fs.fs_type.chars().count() > 11 {
+            fs.fs_type.chars().take(11).collect()
+        } else {
+            fs.fs_type.clone()
+        };
+        let fs_mount: String = if fs.mount_point.chars().count() > 14 {
+            fs.mount_point.chars().take(14).collect()
+        } else {
+            fs.mount_point.clone()
+        };
 
         let mut spans = vec![
             Span::raw(format!("{:<15}", fs_name)),

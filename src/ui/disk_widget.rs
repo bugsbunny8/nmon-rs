@@ -18,9 +18,9 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect, show_disk: u
     let (read_kb, write_kb) = if has_any_logical_io {
         let total_r: u64 = snapshot.filesystems.iter().map(|fs| fs.read_bps.unwrap_or(0)).sum();
         let total_w: u64 = snapshot.filesystems.iter().map(|fs| fs.write_bps.unwrap_or(0)).sum();
-        (total_r as f64 / 1024.0, total_w as f64 / 1024.0)
+        (crate::metrics::bytes_to_kb(total_r as f64), crate::metrics::bytes_to_kb(total_w as f64))
     } else {
-        (io.read_bps as f64 / 1024.0, io.write_bps as f64 / 1024.0)
+        (crate::metrics::bytes_to_kb(io.read_bps as f64), crate::metrics::bytes_to_kb(io.write_bps as f64))
     };
     let _total_kb = read_kb + write_kb;
 
@@ -45,8 +45,8 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect, show_disk: u
         // Calculate total summed space across filesystems
         let total_sys_bytes: u64 = snapshot.filesystems.iter().map(|fs| fs.total_bytes).sum();
         let free_sys_bytes: u64 = snapshot.filesystems.iter().map(|fs| fs.available_bytes).sum();
-        let total_sys_gb = total_sys_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
-        let free_sys_gb = free_sys_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
+        let total_sys_gb = crate::metrics::bytes_to_gb(total_sys_bytes as f64);
+        let free_sys_gb = crate::metrics::bytes_to_gb(free_sys_bytes as f64);
 
         // System aggregate row
         lines.push(Line::from(vec![
@@ -59,18 +59,22 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect, show_disk: u
 
         // Filesystems storage space and per-logical-drive throughput
         for fs in &snapshot.filesystems {
-            let total_gb = fs.total_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
-            let free_gb = fs.available_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
+            let total_gb = crate::metrics::bytes_to_gb(fs.total_bytes as f64);
+            let free_gb = crate::metrics::bytes_to_gb(fs.available_bytes as f64);
             
-            // Limit filesystem name length
-            let display_name = if fs.name.len() > 14 { &fs.name[0..14] } else { &fs.name };
+            // Limit filesystem name length safely using char count to avoid UTF-8 indexing panics
+            let display_name: String = if fs.name.chars().count() > 14 {
+                fs.name.chars().take(14).collect()
+            } else {
+                fs.name.clone()
+            };
 
             let read_str = match fs.read_bps {
-                Some(bps) => format!("{:>14.1}", bps as f64 / 1024.0),
+                Some(bps) => format!("{:>14.1}", crate::metrics::bytes_to_kb(bps as f64)),
                 None => format!("{:>14}", "N/A"),
             };
             let write_str = match fs.write_bps {
-                Some(bps) => format!("{:>14.1}", bps as f64 / 1024.0),
+                Some(bps) => format!("{:>14.1}", crate::metrics::bytes_to_kb(bps as f64)),
                 None => format!("{:>14}", "N/A"),
             };
 
@@ -104,12 +108,12 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect, show_disk: u
 
     // Render a row for each filesystem/partition
     for fs in &snapshot.filesystems {
-        let fs_read_kb = fs.read_bps.unwrap_or(0) as f64 / 1024.0;
-        let fs_write_kb = fs.write_bps.unwrap_or(0) as f64 / 1024.0;
+        let fs_read_kb = crate::metrics::bytes_to_kb(fs.read_bps.unwrap_or(0) as f64);
+        let fs_write_kb = crate::metrics::bytes_to_kb(fs.write_bps.unwrap_or(0) as f64);
         let fs_total_kb = fs_read_kb + fs_write_kb;
 
         // Calculate Busy% (est as total_kb / 10MB/s * 100)
-        let busy_pct = (fs_total_kb / (1024.0 * 10.0) * 100.0).min(100.0);
+        let busy_pct = (fs_total_kb / (10.0 * crate::KB!()) * 100.0).min(100.0);
         let busy_str = format!("{:>3.0}%", busy_pct);
 
         // Calculate bar width (50 chars total)
@@ -123,8 +127,12 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect, show_disk: u
         };
         let w_chars = busy_chars.saturating_sub(r_chars);
 
-        // Format name (limit to 8 chars)
-        let display_name = if fs.name.len() > 8 { &fs.name[0..8] } else { &fs.name };
+        // Format name safely using char count to avoid UTF-8 indexing panics (limit to 8 chars)
+        let display_name: String = if fs.name.chars().count() > 8 {
+            fs.name.chars().take(8).collect()
+        } else {
+            fs.name.clone()
+        };
 
         // Prefix string length = 8 (display_name) + 5 (busy_str) + 6 (fs_read_kb) + 6 (fs_write_kb) + 1 (|) = 26 chars
         let mut row_spans = vec![
@@ -147,8 +155,8 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect, show_disk: u
     }
 
     // Totals line at the bottom
-    let total_read_mb = read_kb / 1024.0;
-    let total_write_mb = write_kb / 1024.0;
+    let total_read_mb = read_kb / crate::KB!();
+    let total_write_mb = write_kb / crate::KB!();
     let transfers = (read_kb + write_kb) / 4.0; // default IOPS estimate
 
     lines.push(Line::from(vec![

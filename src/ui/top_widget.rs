@@ -41,14 +41,15 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect, sort_by_cpu:
     let display_count = procs.len().min(max_rows).min(15); // limit to max 15 processes
 
     for proc in procs.iter().take(display_count) {
-        let mem_mb = proc.memory_bytes as f64 / 1024.0 / 1024.0;
-        let read_kb = proc.disk_read_bps as f64 / 1024.0;
-        let write_kb = proc.disk_write_bps as f64 / 1024.0;
+        let mem_mb = crate::metrics::bytes_to_mb(proc.memory_bytes as f64);
+        let read_kb = crate::metrics::bytes_to_kb(proc.disk_read_bps as f64);
+        let write_kb = crate::metrics::bytes_to_kb(proc.disk_write_bps as f64);
 
-        // Truncate command name to fit terminal space
+        // Truncate command name to fit terminal space safely (using char boundaries)
         let command_max_len = (area.width.saturating_sub(58)) as usize;
-        let cmd_display = if proc.command.len() > command_max_len {
-            format!("{}...", &proc.command[0..command_max_len.saturating_sub(3)])
+        let cmd_display = if proc.command.chars().count() > command_max_len {
+            let truncated: String = proc.command.chars().take(command_max_len.saturating_sub(3)).collect();
+            format!("{}...", truncated)
         } else {
             proc.command.clone()
         };

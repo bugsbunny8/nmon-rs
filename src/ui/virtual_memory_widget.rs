@@ -16,8 +16,8 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect) {
     let mut lines = Vec::new();
 
     let mem = &snapshot.memory;
-    let total_swap_mb = mem.total_swap as f64 / 1024.0 / 1024.0;
-    let free_swap_mb = mem.free_swap as f64 / 1024.0 / 1024.0;
+    let total_swap_mb = crate::metrics::bytes_to_mb(mem.total_swap as f64);
+    let free_swap_mb = crate::metrics::bytes_to_mb(mem.free_swap as f64);
     let used_swap_mb = total_swap_mb - free_swap_mb;
     let used_swap_pct = if mem.total_swap > 0 {
         (used_swap_mb / total_swap_mb) * 100.0

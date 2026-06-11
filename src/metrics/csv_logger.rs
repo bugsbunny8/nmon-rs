@@ -3,6 +3,7 @@
 use std::io::{self, Write};
 use chrono::Local;
 use super::snapshot::MetricSnapshot;
+use super::{bytes_to_kb, bytes_to_mb, bytes_to_gb};
 
 /// Writes system metadata, configuration details (the "AAA" section),
 /// and column headers for CPU, memory, disk, network, and filesystems to the output stream.
@@ -138,10 +139,10 @@ pub fn write_snapshot_row<W: Write>(
     }
 
     // 4. Memory
-    let total_ram_mb = snapshot.memory.total_ram as f64 / 1024.0 / 1024.0;
-    let free_ram_mb = snapshot.memory.free_ram as f64 / 1024.0 / 1024.0;
-    let total_swap_mb = snapshot.memory.total_swap as f64 / 1024.0 / 1024.0;
-    let free_swap_mb = snapshot.memory.free_swap as f64 / 1024.0 / 1024.0;
+    let total_ram_mb = bytes_to_mb(snapshot.memory.total_ram as f64);
+    let free_ram_mb = bytes_to_mb(snapshot.memory.free_ram as f64);
+    let total_swap_mb = bytes_to_mb(snapshot.memory.total_swap as f64);
+    let free_swap_mb = bytes_to_mb(snapshot.memory.free_swap as f64);
     writeln!(
         w,
         "MEM,{},{:.1},{:.1},{:.1},{:.1},{:.1},{:.1},{:.1},{:.1},{:.1},{:.1},{:.1},{:.1},{:.1},{:.1},{:.1}",
@@ -169,13 +170,13 @@ pub fn write_snapshot_row<W: Write>(
     let (read_kb, write_kb) = if has_any_logical_io {
         let total_r: u64 = snapshot.filesystems.iter().map(|fs| fs.read_bps.unwrap_or(0)).sum();
         let total_w: u64 = snapshot.filesystems.iter().map(|fs| fs.write_bps.unwrap_or(0)).sum();
-        (total_r as f64 / 1024.0, total_w as f64 / 1024.0)
+        (bytes_to_kb(total_r as f64), bytes_to_kb(total_w as f64))
     } else {
-        (snapshot.disk_io.read_bps as f64 / 1024.0, snapshot.disk_io.write_bps as f64 / 1024.0)
+        (bytes_to_kb(snapshot.disk_io.read_bps as f64), bytes_to_kb(snapshot.disk_io.write_bps as f64))
     };
     let total_kb = read_kb + write_kb;
     // Calculate simple busy approximation (e.g. 10MB/s is 100% busy)
-    let busy_pct = (total_kb / (1024.0 * 10.0) * 100.0).min(100.0);
+    let busy_pct = (total_kb / (10.0 * crate::KB!()) * 100.0).min(100.0);
     writeln!(w, "DISKBUSY,{},{:.1}", t_code, busy_pct)?;
     writeln!(w, "DISKREAD,{},{:.1}", t_code, read_kb)?;
     writeln!(w, "DISKWRITE,{},{:.1}", t_code, write_kb)?;
@@ -185,10 +186,10 @@ pub fn write_snapshot_row<W: Write>(
     // 6. Network
     write!(w, "NET,{}", t_code)?;
     for net in &snapshot.networks {
-        write!(w, ",{:.1}", net.rx_bytes_sec as f64 / 1024.0)?;
+        write!(w, ",{:.1}", bytes_to_kb(net.rx_bytes_sec as f64))?;
     }
     for net in &snapshot.networks {
-        write!(w, ",{:.1}", net.tx_bytes_sec as f64 / 1024.0)?;
+        write!(w, ",{:.1}", bytes_to_kb(net.tx_bytes_sec as f64))?;
     }
     writeln!(w)?;
 
@@ -204,8 +205,8 @@ pub fn write_snapshot_row<W: Write>(
     // 7. Filesystems
     write!(w, "JFSFILE,{}", t_code)?;
     for fs in &snapshot.filesystems {
-        let total_gb = fs.total_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
-        let free_gb = fs.available_bytes as f64 / 1024.0 / 1024.0 / 1024.0;
+        let total_gb = bytes_to_gb(fs.total_bytes as f64);
+        let free_gb = bytes_to_gb(fs.available_bytes as f64);
         let used_pct = if total_gb > 0.0 {
             ((total_gb - free_gb) / total_gb) * 100.0
         } else {

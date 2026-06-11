@@ -46,15 +46,20 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect) {
     // nmon busy map characters definition
     let map_chars = "_____.....----------++++++++++oooooooooo0000000000OOOOOOOOOO8888888888XXXXXXXXXX##########@@@@@@@@@@*";
 
-    // Build the grid representing filesystem/disk capacities as a busy map
+    // Build the grid representing disk activity as a busy map
     let mut spans = vec![Span::styled("Disk Map:  ", Style::default().bold())];
 
     for fs in &snapshot.filesystems {
         if fs.total_bytes == 0 {
             continue;
         }
-        let used_bytes = fs.total_bytes.saturating_sub(fs.available_bytes);
-        let used_pct = (used_bytes as f64 / fs.total_bytes as f64 * 100.0).round() as usize;
+        let fs_read_kb = crate::metrics::bytes_to_kb(fs.read_bps.unwrap_or(0) as f64);
+        let fs_write_kb = crate::metrics::bytes_to_kb(fs.write_bps.unwrap_or(0) as f64);
+        let fs_total_kb = fs_read_kb + fs_write_kb;
+
+        // Calculate Busy% (est as total_kb / 10MB/s * 100)
+        let busy_pct = (fs_total_kb / (10.0 * crate::KB!() as f64) * 100.0).min(100.0);
+        let used_pct = busy_pct.round() as usize;
         let char_idx = used_pct.min(100);
         let map_char = map_chars.chars().nth(char_idx).unwrap_or('_');
 

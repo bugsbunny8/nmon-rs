@@ -25,8 +25,8 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect) {
 
     for net in &snapshot.networks {
         // Convert to KB/s
-        let rx_kb = net.rx_bytes_sec as f64 / 1024.0;
-        let tx_kb = net.tx_bytes_sec as f64 / 1024.0;
+        let rx_kb = crate::metrics::bytes_to_kb(net.rx_bytes_sec as f64);
+        let tx_kb = crate::metrics::bytes_to_kb(net.tx_bytes_sec as f64);
         let total_kb = rx_kb + tx_kb;
 
         let mut spans = vec![
@@ -40,11 +40,10 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect) {
         // Let's use simple threshold bins: each '#' represents a power of 2 or linear step
         // We will do a 15-char gauge.
         let bar_width = 15;
-        let filled = if total_kb > 1024.0 * 10.0 {
+        let filled = if total_kb > 10.0 * crate::KB!() {
             bar_width // > 10MB/s is full
         } else if total_kb > 0.1 {
-            // Logarithmic representation
-            let ratio = (total_kb.log2().max(0.0) / (1024.0 * 10.0f64).log2()) * bar_width as f64;
+            let ratio = (total_kb.log2().max(0.0) / (10.0 * crate::KB!() as f64).log2()) * bar_width as f64;
             (ratio.round() as usize).clamp(1, bar_width)
         } else {
             0

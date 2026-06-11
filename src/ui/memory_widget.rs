@@ -18,16 +18,16 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect) {
     let mem = &snapshot.memory;
 
     // Convert bytes to MB
-    let total_ram_mb = mem.total_ram as f64 / 1024.0 / 1024.0;
-    let free_ram_mb = mem.free_ram as f64 / 1024.0 / 1024.0;
+    let total_ram_mb = crate::metrics::bytes_to_mb(mem.total_ram as f64);
+    let free_ram_mb = crate::metrics::bytes_to_mb(mem.free_ram as f64);
     let ram_free_pct = if mem.total_ram > 0 {
         (mem.free_ram as f64 / mem.total_ram as f64) * 100.0
     } else {
         0.0
     };
 
-    let total_swap_mb = mem.total_swap as f64 / 1024.0 / 1024.0;
-    let free_swap_mb = mem.free_swap as f64 / 1024.0 / 1024.0;
+    let total_swap_mb = crate::metrics::bytes_to_mb(mem.total_swap as f64);
+    let free_swap_mb = crate::metrics::bytes_to_mb(mem.free_swap as f64);
     let swap_free_pct = if mem.total_swap > 0 {
         (mem.free_swap as f64 / mem.total_swap as f64) * 100.0
     } else {
@@ -74,8 +74,8 @@ pub fn render(f: &mut Frame, snapshot: &MetricSnapshot, area: Rect) {
     lines.push(Line::from(Span::styled("--------------------------------------------------------------------------------", Style::default().fg(Color::DarkGray))));
 
     // Row 6: Platform notes/extra info
-    let used_ram_mb = (mem.total_ram - mem.free_ram) as f64 / 1024.0 / 1024.0;
-    let used_swap_mb = (mem.total_swap - mem.free_swap) as f64 / 1024.0 / 1024.0;
+    let used_ram_mb = crate::metrics::bytes_to_mb((mem.total_ram - mem.free_ram) as f64);
+    let used_swap_mb = crate::metrics::bytes_to_mb((mem.total_swap - mem.free_swap) as f64);
     lines.push(Line::from(vec![
         Span::raw("Used RAM: "),
         Span::styled(format!("{:.1} MB", used_ram_mb), Style::default().fg(Color::LightGreen)),

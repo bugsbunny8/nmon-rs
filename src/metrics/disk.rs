@@ -152,8 +152,11 @@ impl DiskCollector {
         self.disks_list
             .iter()
             .map(|disk| {
-                let name = disk.name().to_string_lossy().into_owned();
                 let mount_point = disk.mount_point().to_string_lossy().into_owned();
+                let mut name = disk.name().to_string_lossy().into_owned();
+                if name.is_empty() {
+                    name = mount_point.trim_end_matches('\\').to_string();
+                }
                 
                 #[cfg(target_os = "windows")]
                 let (read_bps, write_bps) = {

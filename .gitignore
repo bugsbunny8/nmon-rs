@@ -21,3 +21,6 @@ target
 #.idea/
 Cargo.lock
 alerts.log
+
+# nmon generated file 
+*.nmon
